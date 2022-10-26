@@ -58,6 +58,6 @@ gzip $dir/$filename
 
 # Finally remove all old files
 
-find $dir -mtime +30 -exec rm '{}' \;
+find $dir -mtime +7 -exec rm '{}' \;
 
 echo "bartonlp: bkupdb.sh Done"

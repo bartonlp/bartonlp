@@ -1,5 +1,2 @@
-other/*.gz
-scripts/
 *.asv#
 .cache_ggshield
-apache-conf/
