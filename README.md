@@ -1,5 +1,5 @@
 # No Longer used as the bartonlp.com domain
-This is not where [https://bartonlp.com](https://bartonlp.com) comes to. It goes to <b>/var/www</b>. This is <b>/var/www/bartonlp</b>.
+This is not where [https://bartonlp.com](https://bartonlp.com) comes to. It goes to <b>/var/www/bartonlp.com</b>. This is <b>/var/www/bartonlp</b>.
 
 This directory has only the following files:
 ```
