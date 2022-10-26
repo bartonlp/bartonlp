@@ -1,22 +1,2 @@
-User-agent: *
-Disallow: /analysis/
-Disallow: /MySitemap.php
-Disallow: /make-webstats.php
-Disallow: /other/
-Disallow: /script/
-Disallow: /fonts/
-Disallow: /images/
-Disallow: /geo/
-Disallow: /heidi/
-Disallow: /tbs_class/
-Disallow: /sqlscripts/
-Disallow: /css/
-Disallow: /examples/
-Disallow: /fonts/
-Disallow: /heidi/
-Disallow: /includes/
-Disallow: /js/
-Disallow: /static/
-Disallow: /*.eval
-
-Sitemap: http://www.bartonlp.com/Sitemap.xml
+user-agent: *
+disallow: /
