@@ -1,15 +1,12 @@
 <?php
-// Do listing look ups.
+// test.php. A test of the keypress logic
       
 $_site = require_once(getenv("SITELOADNAME"));
-ErrorClass::setDevelopment(true);
 
 $S = new $_site->className($_site);
 
-$f->script = <<<EOF
-<script>
-$('.phone,.date')
-.on('keypress', function(e) {
+$b->inlineScript = <<<EOF
+$('.phone,.date').on('keypress', function(e) {
   var key = e.charCode || e.keyCode || 0;
   var item = $(this);
   var myclass = item.attr('class');
@@ -44,12 +41,11 @@ $('.phone,.date')
     (key >= 48 && key <= 57) ||
     (key >= 96 && key <= 105));
 });
-</script>
 EOF;
 
 // Set up the header info in $h
 
-list($top, $footer) = $S->getPageTopBottom(null, $f);
+[$top, $footer] = $S->getPageTopBottom(null, $b);
 
 echo <<<EOF
 $top

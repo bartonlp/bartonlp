@@ -25,7 +25,7 @@ CREATE TABLE `rentinfo` (
   `created` datetime DEFAULT NULL,
   `lasttime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=205 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 */
 
 $_site = require_once(getenv("SITELOADNAME"));

@@ -1,4 +1,6 @@
-/*
+<?php
+// NOTE this is a fragment and not valid code!
+
 // Medium table for computers
 
 echo <<<EOF

@@ -1,39 +1,42 @@
 {
-    "siteDomain": "www.bartonlp.com",
-    "siteName": "Rivertown",
-    "mainTitle": "Rivertowne<br>Rentals",
-    "emailDomain": "bartonlp.com",
-    "path": "/var/www/bartonlp/rivertown",
-    "className": "SiteClass",
-    "copyright": "Barton L. Phillips",
-    "author": "Barton L. Phillips, mailto:bartonphillips@gmail.com",
-    "address": "New Bern, North Carolina",
-    "masterdb": "barton",
-    "dbinfo": {
-        "host": "localhost",
-        "user": "barton",
-        "database": "rivertown",
-        "engine": "mysqli"
-    },
-    "errorMode": {
-      "development": true, // development automatically sets email to true.
-                         // If development is true then noEmail will be
-                         // set to true unless noEmail is set to false!
-                         // Only false not null or just missing.
-      "noEmail": null,   // Set it to null will not affect the true above which sets it to true also.
-      "noHtml": false,
-      "noOutput": false
-    },
-    "headFile": "includes/head.i.php",
-    "bannerFile": "includes/banner.i.php",
-    "footerFile": "includes/footer.i.php",
-    "notrack": true,
-    "count": false,
-    "countMe": false,
-    "ctrmsg": "Counter Reset: Feb. 4, 2017",
-    "trackerImg1": "",
-    "trackerImg2": "",
-    "EMAILADDRESS": "bartonphillips@gmail.com",
-    "EMAILRETURN": "bartonphillips@gmail.com",
-    "EMAILFROM": "webmaster@bartonlp.com"
+  "siteDomain": "bartonlp.com", // NOTE bartonlp does not have a domain!
+  // To run these you will need to do php -S localhost:7000 and then
+  // use lynx localhost:7000/filename. Or move this to a real domain
+  // somewhere. NOTE lynx does not have javascript!
+  "siteName": "Rivertown",
+  "mainTitle": "Rivertowne<br>Rentals",
+  "emailDomain": "bartonlp.com", // NOT real 
+  "path": "/var/www/bartonlp/rivertown", // This the current path true path. 
+  "className": "SiteClass",
+  "copyright": "Barton L. Phillips",
+  "author": "Barton L. Phillips, mailto:bartonphillips@gmail.com",
+  "address": "New Bern, North Carolina",
+  "masterdb": "barton",
+  "dbinfo": {
+    "host": "localhost",
+    "user": "barton",
+    "database": "rivertown", // NOTE there is no rivertown database so you will need to create one.
+    "engine": "mysqli"
+  },
+  "errorMode": {
+    "development": true, // development automatically sets email to true.
+    // If development is true then noEmail will be
+    // set to true unless noEmail is set to false!
+    // Only false not null or just missing.
+    "noEmail": null,   // Set it to null will not affect the true above which sets it to true also.
+    "noHtml": false,
+    "noOutput": false
+  },
+  "headFile": "includes/head.i.php",
+  "bannerFile": "includes/banner.i.php",
+  "footerFile": "includes/footer.i.php",
+  "notrack": true,
+  "count": false,
+  "countMe": false,
+  "ctrmsg": "Counter Reset: Feb. 4, 2017",
+  "trackerImg1": "",
+  "trackerImg2": "",
+  "EMAILADDRESS": "bartonphillips@gmail.com",
+  "EMAILRETURN": "bartonphillips@gmail.com",
+  "EMAILFROM": "webmaster@bartonlp.com"
 }

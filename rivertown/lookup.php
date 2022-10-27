@@ -1,8 +1,34 @@
 <?php
 // Do listing look ups.
-      
+/*
+CREATE TABLE `rentinfo` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `rentalStreet` varchar(100) NOT NULL,
+  `rentalNumber` varchar(100) NOT NULL,
+  `ownerName` varchar(100) DEFAULT NULL,
+  `ownerAddress` varchar(200) DEFAULT NULL,
+  `ownerPhone` varchar(20) DEFAULT NULL COMMENT '(nnn)nnn-nnnn',
+  `ownerPhone2` varchar(20) DEFAULT NULL,
+  `ownerEmail` varchar(200) DEFAULT NULL,
+  `renterAccount` varchar(20) DEFAULT NULL COMMENT 'if rented the renterXXX values will be filled',
+  `renterName` varchar(100) DEFAULT NULL,
+  `renterPhone1` varchar(20) DEFAULT NULL,
+  `renterPhone2` varchar(20) DEFAULT NULL,
+  `renterEmail` varchar(200) DEFAULT NULL,
+  `leaseEndDate` varchar(20) DEFAULT NULL,
+  `rentalStatus` varchar(20) DEFAULT NULL COMMENT 'vacant, notVacant, lastMonth',
+  `accessStatus` varchar(20) DEFAULT NULL COMMENT 'lockboxBlack, lockboxGray, key, appointment',
+  `petStatus` varchar(20) DEFAULT NULL,
+  `reserve` varchar(20) DEFAULT NULL,
+  `keyCode` varchar(10) DEFAULT NULL,
+  `notes` text,
+  `created` datetime DEFAULT NULL,
+  `lasttime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+*/
+
 $_site = require_once(getenv("SITELOADNAME"));
-ErrorClass::setDevelopment(true);
 
 $S = new $_site->className($_site);
 
@@ -19,7 +45,7 @@ EOF;
 
 // Get the $top and $footer given $h and $f
 
-list($top, $footer) = $S->getPageTopBottom($h);
+[$top, $footer] = $S->getPageTopBottom($h);
 
 echo <<<EOF
 $top
