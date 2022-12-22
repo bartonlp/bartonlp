@@ -112,7 +112,7 @@ CREATE TABLE `contact_emails` (
   `created` date DEFAULT NULL,
   `lasttime` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4620 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5826 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -187,7 +187,9 @@ CREATE TABLE `dayrecords` (
   `jsin` varchar(10) DEFAULT NULL,
   `jsout` varchar(20) DEFAULT NULL,
   `dayreal` int DEFAULT NULL,
+  `rcount` int DEFAULT '0',
   `daybots` int DEFAULT NULL,
+  `bcount` int DEFAULT '0',
   `dayvisits` int DEFAULT NULL,
   `visits` smallint DEFAULT '0',
   `lasttime` datetime DEFAULT NULL
@@ -311,7 +313,7 @@ CREATE TABLE `tracker` (
   KEY `ip` (`ip`),
   KEY `lasttime` (`lasttime`),
   KEY `starttime` (`starttime`)
-) ENGINE=MyISAM AUTO_INCREMENT=6387839 DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=6436827 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -323,4 +325,4 @@ CREATE TABLE `tracker` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2022-10-26  2:02:15
+-- Dump completed on 2022-12-22  2:03:19
