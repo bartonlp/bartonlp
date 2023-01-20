@@ -1,2 +1,4 @@
 *.asv#
 .cache_ggshield
+/other
+/apache-cont
