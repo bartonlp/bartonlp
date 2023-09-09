@@ -1,5 +1,5 @@
 {
-  "siteDomain": "bartonlp.com", // NOTE bartonlp does not have a domain!
+  "siteDomain": "localhost", // NOTE bartonlp does not have a domain!
   // To run these you will need to do php -S localhost:7000 and then
   // use lynx localhost:7000/filename. Or move this to a real domain
   // somewhere. NOTE lynx does not have javascript!

@@ -1,4 +1,5 @@
 <?php
+// BLP 2023-02-25 - no $h/$b
 // NOTE the database 'rivertown' must already be created.
 // NOTE the table 'rentinfo' must be created as follows:
 /*

@@ -1,11 +1,12 @@
 <?php
+// BLP 2023-02-25 - use new approach
 // test.php. A test of the keypress logic
       
 $_site = require_once(getenv("SITELOADNAME"));
 
 $S = new $_site->className($_site);
 
-$b->inlineScript = <<<EOF
+$S->b_inlineScript = <<<EOF
 $('.phone,.date').on('keypress', function(e) {
   var key = e.charCode || e.keyCode || 0;
   var item = $(this);
@@ -43,9 +44,7 @@ $('.phone,.date').on('keypress', function(e) {
 });
 EOF;
 
-// Set up the header info in $h
-
-[$top, $footer] = $S->getPageTopBottom(null, $b);
+[$top, $footer] = $S->getPageTopBottom();
 
 echo <<<EOF
 $top

@@ -4,16 +4,30 @@
 // cron is set to run every 15 min.
 // I look for zeros in 'tracker' every interval.
 // For every 'ip', 'agent' and 'site' that has isJavaScript equal to zero.
-// I 'order' the return by 'ip' address so if there are multiple 'ip' occrances they are one after
-// the other.
-// I then set $last to the current 'ip' address at the end of the process. I use $last to
-// tell if the previous 'ip' is the same as the current 'ip'. If it is I update the bots2 record
-// with plus one for the count.
 // This script looks at the 'tracker' table and adds any isJavaScript==0 entries to 'bots' and 'bots2'.
-// The idea is that once we have been able to run javascript or get the image info via tracker.php (normal, script, and
-// noscript) we can then figure out if the ip is really a zero or not. If we find
-// that it is, and the javascript or image has values, this is NOT a zero.
-// BLP 2022-07-29 - on insert update the bots field in daycounts table.
+/*
+CREATE TABLE `bots` (
+  `ip` varchar(40) NOT NULL DEFAULT '',
+  `agent` text NOT NULL,
+  `count` int DEFAULT NULL,
+  `robots` int DEFAULT '0',
+  `site` varchar(255) DEFAULT NULL,
+  `creation_time` datetime DEFAULT NULL,
+  `lasttime` datetime DEFAULT NULL,
+  PRIMARY KEY (`ip`,`agent`(254))
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+CREATE TABLE `bots2` (
+  `ip` varchar(40) NOT NULL DEFAULT '',
+  `agent` text NOT NULL,
+  `page` text,
+  `date` date NOT NULL,
+  `site` varchar(50) NOT NULL DEFAULT '',
+  `which` int NOT NULL DEFAULT '0',
+  `count` int DEFAULT NULL,
+  `lasttime` datetime DEFAULT NULL,
+  PRIMARY KEY (`ip`,`agent`(254),`date`,`site`,`which`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+*/
 
 $_site = require_once(getenv("SITELOADNAME"));
 require_once(SITECLASS_DIR . "/defines.php");
@@ -21,108 +35,167 @@ require_once(SITECLASS_DIR . "/defines.php");
 $S = new Database($_site);
 $db = $S->masterdb;
 
-$myIps = implode(",", $S->myIp);
+$meIp = null;
+$ipAr = $S->myIp;
+
+foreach($ipAr as $v) {
+  $meIp .= "'$v',";
+}
+$meIp = rtrim($meIp, ',');
 
 // Look at the tracker table and find any isJavaScript equal zero that are not me. These are curl or the like.
 // This means no javascript of header image info (script, normal or noscript) and no csstest via
 // .htaccess RewriteRule.
 
-$sql = "select ip, agent, site, finger, botAs from $db.tracker ". // BLP 2022-06-13 - add finger
-       "where ip not in ('$myIps') and isJavaScript = " . TRACKER_ZERO . 
-       " and lasttime >= now() - interval 15 minute order by ip"; // interval = 15 min
+$zero = TRACKER_ZERO;
+$cronZero = BOTS_CRON_ZERO;
+$newCount = 0;
+$count = 0;
+$ncnt = 0;
 
-if($S->query($sql) == 0) {
-  error_log("checktracker2.php: No records with isJavaScript=0 found");
+$sql = "select id, ip, agent, site, page, botAs, isJavaScript, difftime from $db.tracker ".
+       "where ip not in($meIp) and isJavaScript='$zero' " . 
+       "and lasttime>=now() - interval 15 minute order by ip";
+       //"and date(lasttime)>=current_date() - interval 1 day order by ip";
+       //"order by ip";
+
+if(!$S->query($sql)) {
+  //error_log("checktracker2.php: No records");
+  //echo "No records\n";
   exit();
 }
 
+$r = $S->getResult();
+
 // Loop through all of toady's tracker records looking for isJavaScript=0.
+// This is just for the last 15 minutes
 
-$r = $S->getResult(); // save the above sql so we can do other thing inside the loop
-$count = $insertCnt = 0;
-$last = '';
-
-while([$ip, $agent, $trackerSite, $finger, $botAs] = $S->fetchrow($r, 'num')) { // process the 'tracker' records. // BLP 2022-06-13 - add finger
-  if($finger) {
-    error_log("checktracker2.php: Because finger=$finger not a bot: $ip, $agent");
-    continue; // This record has a finger
-  }
-  
-  ++$count;
-  
-  $agent = $S->escape($agent);
-
-  // Now look in the bots table to see if there is a record that matches the ip and agent
-
-  $sql = "select site, lasttime from $db.bots where lasttime>=current_date() and ip='$ip' and agent='$agent'";
-
-  // Is there a record?
-
-  if($S->query($sql)) {
-    // Yes there is a bots record that matches ip and agent (should be only one because ip and
-    // agent are primary keys).
-
-    [$botsSite, $lasttime] = $S->fetchrow('num'); // get the 'bots' record
-
-    // Now look to see if $trackerSite is in $botsSite. $trackerSite will be a single item while
-    // $botsSite may have multiple items seperated by commas.
-    // If yes then add $trackerSite before $botsSite. Otherwise set $botsSite alone.
-    
-    $botsSite = strpos($botsSite, $trackerSite) === false ? "$botsSite, $trackerSite" : $botsSite;
-
-    $sql = "update $db.bots set site='$botsSite', count=count+1, robots=robots|" . BOTS_CRON_ZERO . ", lasttime=now() ".
-           "where ip='$ip' and agent='$agent'";
-
-    $S->query($sql);
-  } else {
-    // There was NO record for this 'ip' and 'agent' so insert a new record in bots.
-
-    $sql = "insert into $db.bots (ip, agent, count, robots, site, creation_time, lasttime) ".
-           "values('$ip', '$agent', 1, " . BOTS_CRON_ZERO . ", '$trackerSite', now(), now())";
-    try {
-      $S->query($sql);
-    } catch(Exception $e) {
-      // This should NOT happen but sometime does?
-      error_log("checktracker2.php: insert into bots failed (it should not). $ip, $agent, sql($sql), " . __LINE__);
-    }      
-    ++$insertCnt;
-
-    // If we inserted this then we should add 1 to the daycounts for this date as zeros are not
-    // counted because we don't have enough information untill now.
-
-    $S->query("insert into $db.daycounts (site, `date`, bots, lasttime) values('$trackerSite', now(), bots=bots+1, now()) ".
-              "on duplicate key update bots=bots+1, lasttime=now()");
-
-    error_log("updated daycounts $trackerSite, $ip, botAs=$botAs, bots+1");
+while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 'num')) { // process the 'tracker' records.
+  if($diff) {
+    error_log("checktracker2.php ip=$ip, site=$site, page=%page, java=$java, diff=$diff NOT EMPTY");
+    continue; // This record has a difftime 
   }
 
-  // bots2 primary key is 'ip, agent, date, site, which'.
-  
-  $sql = "select ip, count from $db.bots2 where ip='$ip' and agent='$agent' and date=current_date() and which=" . BOTS_CRON_ZERO;
+  // Now before we do anything else add the 0x100 to bots and bots2
 
-  // If the query returns a value then we update the bots2 record.
+  ++$newCount;
   
-  if($S->query($sql)) {
-    // preset $updateCounter, then check $last (the previous 'ip' address) with $ip (the current
-    // 'ip' address. If $last equals $ip then set $updateCounter to count+1.
-    
-    $updateCounter = '';
+  $rob = $cronZero;
+  $sit = $site;
 
-    if($last == $ip) {
-      $updateCounter = "count=count+1, ";
+  // bots is more difficult because site and robots are a list and ored.
+  
+  if($S->query("select site, robots from $db.bots where ip='$ip' and agent='$agent'")) {
+    [$s, $b] = $S->fetchrow('num');
+    if(!str_contains($s, $site)) {
+      $rob |= $b;
+      $sit = "$site, $s";
     }
-    $sql = "update $db.bots2 set {$updateCounter}lasttime=now() where ip='$ip'";
-
-    $S->query($sql);
-  } else {
-    // The query did not return results so we must insert a new bot2 record.
-    
-    $sql = "insert into $db.bots2 (ip, agent, date, site, which, count, lasttime) ".
-           "values('$ip', '$agent', now(), '$trackerSite', " . BOTS_CRON_ZERO . ", 1, now())";
-
-    $S->query($sql);
   }
-  $last = $ip; // Update $last with the current 'ip'
-}
+  
+  $S->query("insert into $db.bots (ip, agent, count, robots, site, creation_time, lasttime) ".
+            "values('$ip', '$agent', 1, $cronZero, '$site', now(), now()) ".
+            "on duplicate key update site='$sit', count=count+1, robots=$rob, lasttime=now()");
 
-error_log("checktracker2.php: count=$count, bots updates=" . $count-$insertCnt . ", insert=$insertCnt");
+  // Do bots2. This should just be an insert.
+  // We ignore duplicate key errors (should not be any)
+  
+  $S->query("insert into $db.bots2 (ip, agent, page, date, site, which, count, lasttime) ".
+            "values('$ip', '$agent', '$page', current_date(), '$site', $cronZero, 1, now()) ".
+            "on duplicate key update count=count+1, lasttime=now()");
+
+  //error_log("Added $ip, $agent, $site to bots&bots2");
+
+  if(empty($ip)) {
+    error_log("checktracker2.php ip empty");
+    continue;
+  }
+
+  if(empty($agent)) {
+    error_log("checktracker2.php agent empty: $id, $ip, $site, $page, $java, $diff");
+    continue;
+  }
+
+  //********
+  // Now look at all tracker entries to see of this ip has ever been not zero.
+  
+  $sql = "select agent, isJavaScript, difftime from $db.tracker where ip='$ip' and site='$site' and isJavaScript!='$zero' order by lasttime";
+
+  // We have never seen this ip without zero
+  
+  if(!$S->query($sql)) continue;
+
+  $rr = $S->getResult();
+  
+  while([$agent2, $java, $diff] = $S->fetchrow($rr, 'num')) {
+    if($java & TRACKER_BOT) continue; // Marked as a bot.
+
+    // We have found a non zero entry for this ip. Does it have a difftime?
+
+    if(!empty($diff)) {
+      // Yes it has a difftime so someone has spend a little time on our site.
+
+      // Now the bots table has a primary key of ip and agent(256).
+      // The 'site' is not a single value it can have multiple sites seperated by commas,
+      // and robots can have values that were ored in.
+      
+      $sql1 = "select robots, site from $db.bots where ip='$ip' and agent='$agent2'";
+      
+      if(!$S->query($sql1)) continue; // Did not find a record
+
+      // Get the robots and the posibly multiple sites into $botsSites
+      
+      [$robots, $botsSites] = $S->fetchrow('num');
+
+      // Remove the BOTS_CRON_ZERO (0x100) from the robots
+
+      $robots &= ~BOTS_CRON_ZERO; // 0x100;
+
+      if(!$robots) {
+        // If $robots is empty then we can delete this record
+          
+        if(!$S->query("delete from $db.bots where ip='$ip' and agent='$agent2'")) {
+          error_log("**** Error: Did not delete $ip, $agent2 from bots");
+        } else {
+          error_log("delete bots: ip=$ip, agent=$agent2, because robots=$robots, site=$site");
+        }
+      } else {
+        $sql2 = "select site from $db.bots where ip='$ip' and agent='$agent2' and site='$botsSites'";
+
+        // Remove the the site from tracker from the $botsSites from the bots table.
+
+        $botsSite = preg_replace("~(.*?)$site(?:,?)(.*?)$~", "$1$2", $botsSites);
+
+        if(!$S->query("update $db.bots set robots='$robots', site='$botsSite', lasttime=now() where ip='$ip' and agent='$agent2'")) {
+          error_log("**** Error: Did not update $ip, $agent2 in bots");
+        } else {
+          error_log("update bots with robots=$robots and site($site) is now $botsSite");
+        }
+      }
+
+      // bots2 primary key(ip, agent(256), date, site, which).
+      // We may get multiple date and which fields
+      
+      $sql1 = "select date, which from $db.bots2 where ip='$ip' and agent='$agent2' and site='$site'";
+      
+      $S->query($sql1);
+
+      while([$date, $which] = $S->fetchrow('num')) {
+        // if which is not BOTS_CRON_ZERO continue.
+        
+        if($which != BOTS_CRON_ZERO) continue; // This is robots(1), Sitemap(2) or BOTS(4)
+
+        if(!$S->query("delete from $db.bots2 where ip='$ip' and agent='$agent2' and date='$date' and site='$site' and which='$which'")) {
+          error_log("**** Error: Did not delete $ip, $agent2, $date, $site, $which from bots2");
+        } else {
+          error_log("delete bots2 record for ip=$ip, agent=$agent2, date=$date, site=$site, which=$which");
+        }
+      }
+      ++$count;
+      continue;
+    }
+    ++$ncnt;
+  }
+}
+//echo "Done: insert/updates=$ncnt\n";
+//error_log("checktracker2.php: Done. Added $newCount to bots&bots2. Update/delete for bots&bots2=$count. tracker isJavaScript not zero=$ncnt");

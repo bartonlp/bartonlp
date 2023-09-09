@@ -1,4 +1,5 @@
 <?php
+// BLP 2023-02-25 - use new approach
 // Do listing look ups.
 /*
 CREATE TABLE `rentinfo` (
@@ -32,20 +33,16 @@ $_site = require_once(getenv("SITELOADNAME"));
 
 $S = new $_site->className($_site);
 
-// Set up the header info in $h
+// Set up the header info in $S
 
-$h->css = <<<EOF
-<style>
+$S->css = <<<EOF
 td a { font-size: 30px; }  
 button { color: red; }
 input[type='submit'] { color: red;}
 #biglabel { font-size: 30px; }
-</style>
 EOF;
 
-// Get the $top and $footer given $h and $f
-
-[$top, $footer] = $S->getPageTopBottom($h);
+[$top, $footer] = $S->getPageTopBottom();
 
 echo <<<EOF
 $top

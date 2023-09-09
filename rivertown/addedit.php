@@ -1,4 +1,5 @@
 <?php
+// BLP 2023-02-25 - use new approach
 // addedit.php. Add new or edit old entries in database
 /*
 CREATE TABLE `rentinfo` (
@@ -31,7 +32,7 @@ CREATE TABLE `rentinfo` (
 $_site = require_once(getenv("SITELOADNAME"));
 $S = new $_site->className($_site);
 
-$f->script = <<<EOF
+$S->b_inlineScript = <<<EOF
 <script>
   $('#main tr').on('click', function(ev) {
   var key;
@@ -82,11 +83,9 @@ $('.phone,.date')
     (key >= 48 && key <= 57) ||
     (key >= 96 && key <= 105));
 });
-</script>
 EOF;
 
-$h->css = <<<EOF
-<style>
+$S->css = <<<EOF
 table {font-size: 16px; margin-left: auto; margin-right: auto;}
 #main td:first-child { font-size: 20px; width: 20px; padding: 3px;}
 #input { width: 100%; max-width: 600px; }
@@ -101,10 +100,9 @@ table {font-size: 16px; margin-left: auto; margin-right: auto;}
 form { text-align: center; }
 button { color: red; }
 input[type='submit'] { color: red; }
-</style>
 EOF;
 
-list($top, $footer) = $S->getPageTopBottom($h, $f);
+[$top, $footer] = $S->getPageTopBottom();
 
 echo <<<EOF
 $top

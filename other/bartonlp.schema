@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 8.0.31, for Linux (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.34, for Linux (x86_64)
 --
 -- Host: localhost    Database: barton
 -- ------------------------------------------------------
--- Server version	8.0.31-0ubuntu0.20.04.1
+-- Server version	8.0.34-0ubuntu0.22.04.1
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -112,7 +112,7 @@ CREATE TABLE `contact_emails` (
   `created` date DEFAULT NULL,
   `lasttime` date DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6199 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8782 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -183,7 +183,7 @@ CREATE TABLE `dayrecords` (
   `ip` varchar(20) DEFAULT NULL,
   `site` varchar(20) DEFAULT NULL,
   `page` varchar(255) DEFAULT NULL,
-  `finger` varchar(20) DEFAULT NULL,
+  `finger` varchar(100) DEFAULT NULL,
   `jsin` varchar(10) DEFAULT NULL,
   `jsout` varchar(20) DEFAULT NULL,
   `dayreal` int DEFAULT NULL,
@@ -256,7 +256,7 @@ CREATE TABLE `logagent` (
   `site` varchar(25) NOT NULL DEFAULT '',
   `ip` varchar(40) NOT NULL DEFAULT '',
   `agent` text NOT NULL,
-  `finger` varchar(20) DEFAULT NULL,
+  `finger` varchar(50) DEFAULT NULL,
   `count` int DEFAULT NULL,
   `created` datetime DEFAULT NULL,
   `lasttime` datetime DEFAULT NULL,
@@ -286,6 +286,35 @@ CREATE TABLE `myip` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `test`
+--
+
+DROP TABLE IF EXISTS `test`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `test` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) DEFAULT '',
+  `cnt` int DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=159 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `testit`
+--
+
+DROP TABLE IF EXISTS `testit`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `testit` (
+  `ip` varchar(50) DEFAULT NULL,
+  `agent` varchar(255) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `tracker`
 --
 
@@ -306,13 +335,14 @@ CREATE TABLE `tracker` (
   `endtime` datetime DEFAULT NULL,
   `difftime` varchar(20) DEFAULT NULL,
   `isJavaScript` int DEFAULT '0',
+  `error` varchar(256) DEFAULT NULL,
   `lasttime` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `site` (`site`),
   KEY `ip` (`ip`),
   KEY `lasttime` (`lasttime`),
   KEY `starttime` (`starttime`)
-) ENGINE=MyISAM AUTO_INCREMENT=6462238 DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=6685548 DEFAULT CHARSET=utf8mb3;
 /*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -324,4 +354,4 @@ CREATE TABLE `tracker` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2023-01-20  2:06:26
+-- Dump completed on 2023-09-08  2:02:20
