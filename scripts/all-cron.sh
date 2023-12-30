@@ -12,7 +12,8 @@ echo "bartonlp: all-cron.sh Start";
 /var/www/bartonphillips.com/scripts/updatesitemap.php
 /var/www/tysonweb/scripts/updatesitemap.php
 /var/www/newbernzig.com/scripts/updatesitemap.php
-/var/www/allnaturalcleaningcompany/scripts/updatesitemap.php
+# No longer using allnatural
+#/var/www/allnaturalcleaningcompany/scripts/updatesitemap.php
 /var/www/bonnieburch.com/scripts/updatesitemap.php
 # Cleanup the 'tracker', 'bots2', 'daycounts' and 'counter2'
 /var/www/bartonlp/scripts/cleanuptables.php
