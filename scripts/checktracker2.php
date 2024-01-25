@@ -59,15 +59,22 @@ CREATE TABLE `tracker` (
 ) ENGINE=MyISAM AUTO_INCREMENT=6716225 DEFAULT CHARSET=utf8mb3;  
 */
 
-$_site = require_once(getenv("SITELOADNAME"));
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE & ~E_WARNING);
+
+//$_site = require_once(getenv("SITELOADNAME"));
+$_site = require_once("/var/www/vendor/bartonlp/site-class/includes/siteload.php");
+//vardump("site", $_site);
+ErrorClass::setErrorType(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE & ~E_WARNING);
+
 require_once(SITECLASS_DIR . "/defines.php");
 
 $S = new dbMysqli($_site);
+
 $db = "barton";
 
 $meIp = null;
 $ipAr = [];
-$S->query("select myIp from $db.myip");
+$S->sql("select myIp from $db.myip");
 while($ip = $S->fetchrow('num')[0]) {
   $ipAr[] = $ip;
 }
@@ -94,9 +101,9 @@ $sql = "select id, ip, agent, site, page, botAs, isJavaScript, difftime from $db
        "where ip not in($meIp) and isJavaScript='$zero' " . 
        "and lasttime>=now() - interval 15 minute order by ip";
 
-if(!$S->query($sql)) {
-  //error_log("checktracker2.php: No records");
-  //echo "No records\n";
+if(!$S->sql($sql)) {
+  error_log("checktracker2.php: No records");
+  echo "No records\n";
   exit();
 }
 
@@ -129,7 +136,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
     continue;
   }
 
-  if($S->query("select site, robots from $db.bots where ip='$ip' and agent='$agent'")) {
+  if($S->sql("select site, robots from $db.bots where ip='$ip' and agent='$agent'")) {
     [$s, $b] = $S->fetchrow('num');
 
     // BLP 2023-10-05 - I think we want to always or in $b
@@ -147,16 +154,16 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
   // BLP 2023-10-05 - if we failed to read from bots then this is an insert, otherwise the key
   // exists so do an update.
   
-  $S->query("insert into $db.bots (ip, agent, count, robots, site, creation_time, lasttime) ".
-            "values('$ip', '$agent', 1, $cronZero, '$site', now(), now()) ".
-            "on duplicate key update site='$sit', count=count+1, robots=$rob, lasttime=now()");
+  $S->sql("insert into $db.bots (ip, agent, count, robots, site, creation_time, lasttime) ".
+          "values('$ip', '$agent', 1, $cronZero, '$site', now(), now()) ".
+          "on duplicate key update site='$sit', count=count+1, robots=$rob, lasttime=now()");
 
   // Do bots2. This should just be an insert.
   // We ignore duplicate key errors (should not be any)
   
-  $S->query("insert into $db.bots2 (ip, agent, page, date, site, which, count, lasttime) ".
-            "values('$ip', '$agent', '$page', current_date(), '$site', $cronZero, 1, now()) ".
-            "on duplicate key update count=count+1, lasttime=now()");
+  $S->sql("insert into $db.bots2 (ip, agent, page, date, site, which, count, lasttime) ".
+          "values('$ip', '$agent', '$page', current_date(), '$site', $cronZero, 1, now()) ".
+          "on duplicate key update count=count+1, lasttime=now()");
 
   // BLP 2023-10-15 - make the TRACKER_ZERO (0) into a CHECKTRACKER|TRACKER_BOT (0x8200)
 
@@ -168,7 +175,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
     $botAs .= ",".BOTAS_ZERO;
   }
   
-  $S->query("update $db.tracker set botAs='$botAs', isJavaScript='$bot', lasttime=now() where ip='$ip' and agent='$agent'");
+  $S->sql("update $db.tracker set botAs='$botAs', isJavaScript='$bot', lasttime=now() where ip='$ip' and agent='$agent'");
   
   //$tmp = dechex($bot); error_log("checktracker2.php: id=$id, ip=$ip, update tracker set isJavaScript to $tmp");
     
@@ -179,7 +186,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
 
   // We have never seen this ip without zero
   
-  if(!$S->query($sql)) continue;
+  if(!$S->sql($sql)) continue;
 
   $rr = $S->getResult();
 
@@ -199,7 +206,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
       
       $sql1 = "select robots, site from $db.bots where ip='$ip' and agent='$agent2'";
       
-      if(!$S->query($sql1)) continue; // Did not find a record get next
+      if(!$S->sql($sql1)) continue; // Did not find a record get next
 
       // Get the robots and the posibly multiple sites into $botsSites
       
@@ -212,7 +219,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
       if(!$robots) {
         // If $robots is empty then we can delete this record
           
-        if(!$S->query("delete from $db.bots where ip='$ip' and agent='$agent2'")) {
+        if(!$S->sql("delete from $db.bots where ip='$ip' and agent='$agent2'")) {
           error_log("checktracker2.php **** Error: Did not delete $ip, $agent2 from bots");
         } else {
           error_log("checktracker2.php delete from bots because robots is empty: ip=$ip, agent=$agent2, site=$site");
@@ -226,7 +233,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
 
         if(empty($botsSite)) $botsSite = $site;
         
-        if(!$S->query("update $db.bots set robots='$robots', site='$botsSite', lasttime=now() where ip='$ip' and agent='$agent2'")) {
+        if(!$S->sql("update $db.bots set robots='$robots', site='$botsSite', lasttime=now() where ip='$ip' and agent='$agent2'")) {
           error_log("checktracker2.php **** Error: Did not update $ip, $botsSite, $agent2 in bots");
         } else {
           error_log("checktracker2.php: update $ip, bots with robots=$robots and site=$site is now $botsSite");
@@ -238,14 +245,14 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
       
       $sql1 = "select date, which from $db.bots2 where ip='$ip' and agent='$agent2' and site='$site'";
       
-      $S->query($sql1);
+      $S->sql($sql1);
 
       while([$date, $which] = $S->fetchrow('num')) {
         // if which is not BOTS_CRON_ZERO continue.
         
         if($which != BOTS_CRON_ZERO) continue; // This is robots(1), Sitemap(2) or BOTS(4)
 
-        if(!$S->query("delete from $db.bots2 where ip='$ip' and agent='$agent2' and date='$date' and site='$site' and which='$which'")) {
+        if(!$S->sql("delete from $db.bots2 where ip='$ip' and agent='$agent2' and date='$date' and site='$site' and which='$which'")) {
           error_log("checktracker2.php **** Error: Did not delete $ip, $agent2, $date, $site, $which from bots2");
         } else {
           error_log("checktracker2.php delete bots2 record for ip=$ip, agent=$agent2, date=$date, site=$site, which=$which");
@@ -257,5 +264,5 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
     ++$ncnt;
   }
 }
-//echo "Done: insert/updates=$ncnt\n";
-//error_log("checktracker2.php: Done. Added $newCount to bots&bots2. Update/delete for bots&bots2=$count. tracker isJavaScript not zero=$ncnt");
+echo "Done: insert/updates=$ncnt\n";
+error_log("checktracker2.php: Done. Added $newCount to bots&bots2. Update/delete for bots&bots2=$count. tracker isJavaScript not zero=$ncnt");

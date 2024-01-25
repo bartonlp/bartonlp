@@ -21,6 +21,6 @@ wget -qO- https://bartonphillips.org/analysis.php?siteupdate=BartonphillipsOrg >
 
 # BLP 2023-09-13 - This is special file just for the RPI.
 
-wget -qO- http://bartonphillips.org:8000/analysis.php?siteupdate=Rpi >/dev/null
+wget -qO- https://bartonphillips.org:8000/analysis.php?siteupdate=Rpi >/dev/null
 
 echo "bartonlp: update-analysis.sh Done" ;
