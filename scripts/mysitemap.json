@@ -14,7 +14,7 @@
         "host": "localhost",
         "user": "barton",
         "database": "barton",
-        "engine": "mysqli"
+        "engine": "mysql"
     },
     "errorMode": {
       "development": true, // development automatically sets 'noEmail' to true.

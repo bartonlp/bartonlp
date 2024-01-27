@@ -59,16 +59,15 @@ CREATE TABLE `tracker` (
 ) ENGINE=MyISAM AUTO_INCREMENT=6716225 DEFAULT CHARSET=utf8mb3;  
 */
 
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE & ~E_WARNING);
+// Use absolute path as .htaccess does not have the environment variable SITELOADNAME.
 
-//$_site = require_once(getenv("SITELOADNAME"));
 $_site = require_once("/var/www/vendor/bartonlp/site-class/includes/siteload.php");
 //vardump("site", $_site);
-ErrorClass::setErrorType(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE & ~E_WARNING);
 
 require_once(SITECLASS_DIR . "/defines.php");
 
-$S = new dbMysqli($_site);
+//$S = new dbMysqli($_site); // If using mysqli
+$S = new dbPdo($_site); // If using PDO
 
 $db = "barton";
 
