@@ -1,5 +1,7 @@
 #!/usr/bin/php
 <?php
+// This file does not use any Database!
+
 $_site = require_once(getenv("SITELOADNAME"));
 
 $path = $_site->path; //getcwd();

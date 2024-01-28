@@ -59,12 +59,16 @@ CREATE TABLE `tracker` (
 ) ENGINE=MyISAM AUTO_INCREMENT=6716225 DEFAULT CHARSET=utf8mb3;  
 */
 
-// Use absolute path as .htaccess does not have the environment variable SITELOADNAME.
+$_site = require_once(getenv("SITELOADNAME"));
 
-$_site = require_once("/var/www/vendor/bartonlp/site-class/includes/siteload.php");
-//vardump("site", $_site);
+// BLP 2024-01-28 - these two are not necessary because we are using the low level database class.
+// However, if I were to use Database I would need these.
+$_site->ip = '195.252.232.86'; 
+$_sute->agent = 'checktracker2.php';
 
 require_once(SITECLASS_DIR . "/defines.php");
+
+// Use the low level database functions so I don't need to set up noTrack etc.
 
 //$S = new dbMysqli($_site); // If using mysqli
 $S = new dbPdo($_site); // If using PDO
