@@ -1,5 +1,6 @@
 #!/usr/bin/php
 <?php
+// BLP 2024-11-12 - Currently NOT DONE!
 // BLP 2024-01-28 - Changed the query() to sql().
 // Added ip and agent because $_SERVER does not have these.
 
@@ -12,7 +13,7 @@ $days = 90; // I thing I only need six days.
 // This will use the mysitemap.json in /var/www/bartonlp
 // I now set SITELOADNAME in ~/.profile, along with GITGUARDIAN_API_KEY and IP2COUNTRY.
   
-$_site = require_once(getenv("SITELOADNAME"));
+$_site = require_once "/var/www/vendor/bartonlp/site-class/includes/siteload.php";
 
 $_site->ip = '195.252.232.86'; // BLP 2024-01-28 - $_SERVER['REMOTE_ADDR'] is not available.
 $_site->agent = 'cleanuptables.php'; // BLP 2024-01-28 - dito

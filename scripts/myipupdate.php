@@ -3,7 +3,7 @@
 // Delete entries from the myIp table older than N days that are not my home IP
 // BLP 2024-01-28 - change query to sql. Also ip and agent are not in S_SERVER.
 
-$_site = require_once(getenv("SITELOADNAME"));
+$_site = require_once "/var/www/vendor/bartonlp/site-class/includes/siteload.php";
 
 $_site->ip = '195.252.232.86';  // BLP 2024-01-28 - 
 $_site->agent = 'myipupdate.php';

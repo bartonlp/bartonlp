@@ -1,0 +1,8 @@
+# Apache2 2.4 uses Require
+
+Require all granted
+
+Header set Access-Control-Allow-Origin "*"
+
+SetEnv SITELOAD /var/www/vendor/bartonlp/site-class/includes
+SetEnv SITELOADNAME /var/www/vendor/bartonlp/site-class/includes/siteload.php

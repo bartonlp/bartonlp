@@ -59,19 +59,28 @@ CREATE TABLE `tracker` (
 ) ENGINE=MyISAM AUTO_INCREMENT=6716225 DEFAULT CHARSET=utf8mb3;  
 */
 
-$_site = require_once(getenv("SITELOADNAME"));
+define("CHECKTRACKER_VERSION", "checktracker-2.4"); // BLP 2025-02-16 - Get $trbot from tracker. Fixed rob = $trbot >> 16 not $bot.
+                                                    // Fixed $botAS so not multiple 'zero' entries.
+
+$DEBUG = true;
+//$DEBUG_NO_RECORDS = true;
+//$DEBUG_NOT_EMPTY = true;
+$DEBUG_NEW_RECORD_ADDED = true;
+$DEBUG_TRACKER = true;
+
+$_site = require_once "/var/www/vendor/bartonlp/site-class/includes/siteload.php";
+//$_site = require_once "/var/www/site-class/includes/autoload.php";
 
 // BLP 2024-01-28 - these two are not necessary because we are using the low level database class.
 // However, if I were to use Database I would need these.
 $_site->ip = '195.252.232.86'; 
-$_sute->agent = 'checktracker2.php';
+$_site->agent = 'checktracker2.php';
 
 require_once(SITECLASS_DIR . "/defines.php");
 
 // Use the low level database functions so I don't need to set up noTrack etc.
 
-//$S = new dbMysqli($_site); // If using mysqli
-$S = new dbPdo($_site); // If using PDO
+$S = new dbPdo($_site);
 
 $db = "barton";
 
@@ -90,7 +99,7 @@ foreach($ipAr as $v) {
 $meIp = rtrim($meIp, ',');
 
 // Look at the tracker table and find any isJavaScript equal zero that are not me. These are curl or the like.
-// This means no javascript of header image info (script, normal or noscript) and no csstest via
+// This means no javascript or header image info (normal or noscript) and no csstest via
 // .htaccess RewriteRule.
 
 $bot = CHECKTRACKER | TRACKER_BOT; // CHECKTRACKER = 0x8000, TRACKER_BOT = 0x200 
@@ -100,12 +109,12 @@ $newCount = 0;
 $count = 0;
 $ncnt = 0;
 
-$sql = "select id, ip, agent, site, page, botAs, isJavaScript, difftime from $db.tracker ".
+$sql = "select id, ip, agent, site, page, botAs, difftime, isjavascript from $db.tracker ".
        "where ip not in($meIp) and isJavaScript='$zero' " . 
        "and lasttime>=now() - interval 15 minute order by ip";
 
 if(!$S->sql($sql)) {
-  error_log("checktracker2.php: No records");
+  if($DEBUG_NO_RECORDS) error_log("checktracker: No records");
   echo "No records\n";
   exit();
 }
@@ -115,73 +124,87 @@ $r = $S->getResult();
 // Loop through all of toady's tracker records looking for isJavaScript=0.
 // This is just for the last 15 minutes
 
-while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 'num')) { // process the 'tracker' records.
+while([$id, $ip, $agent, $site, $page, $botAs, $diff, $trbot] = $S->fetchrow($r, 'num')) { // process the 'tracker' records.
   if($diff) { // BLP 2023-10-15 - This person spent time at our site
-    error_log("checktracker2.php ip=$ip, site=$site, page=%page, java=$java, diff=$diff NOT EMPTY");
+    if($DEBUG_NOT_EMPTY)
+      error_log("checktracker: ip=$ip, site=$site, page=%page, diff=$diff NOT EMPTY");
+
     continue; // This record has a difftime. 
   }
 
+  // BLP 2025-01-11 - isJavaScript is always zero see the $sql above!
+  
   // Now before we do anything else add the 0x100 to bots and bots2
 
   ++$newCount;
   
-  $rob = $cronZero; // BLP 2023-10-05 - set robots to BOTS_CRON_ZERO
-  $sit = $site; // BLP 2023-10-05 - set $sit (the value we will write to the table) to the value from the tracker table.
+  $sit = $site; // BLP 2023-10-05 - set $sit, the value we will write to the table bots table, to the value from the tracker table. We will add to it later.
 
   // bots is more difficult because site and robots are a list and ored.
 
-  if(empty($ip) || ($x = preg_match("~^ *$~", $agent)) == 1) {
-    $msg = ($x == 0 ? $agent : "Agent empty") . ", ";
+  if(empty($ip) || ($x = preg_match("~^ *$~", $agent)) === 1) {
+    $msg = ($x === 0 ? $agent : "Agent empty") . ", ";
     $msg .= $ip ?? "Ip empty";
     $msg = rtrim($msg, ", ");
     
-    error_log("checktracker2.php: id=$id,  $msg");
+    if($DEBUG) error_log("checktracker: id=$id,  $msg");
     continue;
   }
 
   if($S->sql("select site, robots from $db.bots where ip='$ip' and agent='$agent'")) {
-    [$s, $b] = $S->fetchrow('num');
-
-    // BLP 2023-10-05 - I think we want to always or in $b
-    
-    $rob |= $b;
+    [$s, $rob] = $S->fetchrow('num');
 
     // BLP 2023-10-05 - If the site is not already in the list add it at the start followed by a
     // comma.
     
-    if(!str_contains($s, $site)) {
-      $sit = "$site, $s"; // BLP 2023-10-05 - $sit now is $site (from tracker) a comma and the value from bots.
+    if(!str_contains($s, $site)) { // $s is haystack, $site is the needle.
+      $sit = "$site, $s"; // $sit now is $site (from tracker) a comma and the value from bots.
     }
+  } else {
+    $rob = $trbot >> 16; // BLP 2025-02-16 - 
+    
+    $botAs = ((($rob & BOTS_ROBOTS) !== 0) ? "robot," : '').((($rob & BOTS_SITEMAP) !== 0) ? "sitemap," : '').
+             ((($rob & BOTS_SITECLASS) !== 0) ? "BOT," : '').((($rob & BOTS_CRON_ZERO) !== 0) ? "zero," : '');
+    $botAs = rtrim($botAs, ',');
+    
+    //error_log("checktracker: ip=$ip, \$rob= $rob, \$botAs=$botAs, line=".__LINE__);
+
+    if($DEBUG_NEW_RECORD_ADDED)
+      error_log("checktracker: NEW RECORD ADDED to bots, NO RECORD in bots table for ip=$ip, botAs=$botAs, rob=$rob, java=$java, agent=$agent, line=".__LINE__);
   }
 
-  // BLP 2023-10-05 - if we failed to read from bots then this is an insert, otherwise the key
+  // If we failed to read from bots then this is an insert, otherwise the key
   // exists so do an update.
-  
+
   $S->sql("insert into $db.bots (ip, agent, count, robots, site, creation_time, lasttime) ".
-          "values('$ip', '$agent', 1, $cronZero, '$site', now(), now()) ".
+          "values('$ip', '$agent', 1, $rob, '$sit', now(), now()) ".
           "on duplicate key update site='$sit', count=count+1, robots=$rob, lasttime=now()");
 
   // Do bots2. This should just be an insert.
   // We ignore duplicate key errors (should not be any)
+  // Here we use $site from tracker and $cronZero because these are singular values.
   
   $S->sql("insert into $db.bots2 (ip, agent, page, date, site, which, count, lasttime) ".
           "values('$ip', '$agent', '$page', current_date(), '$site', $cronZero, 1, now()) ".
           "on duplicate key update count=count+1, lasttime=now()");
 
-  // BLP 2023-10-15 - make the TRACKER_ZERO (0) into a CHECKTRACKER|TRACKER_BOT (0x8200)
+  // Make the TRACKER_ZERO (0) into a CHECKTRACKER|TRACKER_BOT (0x8200)
 
-  // BLP 2023-11-06 - update botAs
-  
-  if(empty($botAs)) {
-    $botAs = BOTAS_ZERO;
+  if($botAs) {
+    if(!str_contains($botAs, BOTAS_ZERO)) { // BLP 2025-02-16 - 
+      $botAs .= ",".BOTAS_ZERO;
+    }
   } else {
-    $botAs .= ",".BOTAS_ZERO;
+    $botAs = BOTAS_ZERO;
   }
   
-  $S->sql("update $db.tracker set botAs='$botAs', isJavaScript='$bot', lasttime=now() where ip='$ip' and agent='$agent'");
+  $trbot |= ($rob & 3) << 16; // BLP 2025-01-11 - $bot starts out as CHECKTRACKER | TRACKER_BOT. $java is the value from the bots table changed into isJavaScript values.
   
-  //$tmp = dechex($bot); error_log("checktracker2.php: id=$id, ip=$ip, update tracker set isJavaScript to $tmp");
-    
+  if($DEBUG_TRACKER)
+    error_log("checktracker: update tracker, ip=$ip, site=$site, page=$page, botAs=$botAs, java=". dechex($trbot). ", agent=$agent");
+  
+  $S->sql("update $db.tracker set botAs='$botAs', isJavaScript='$trbot', lasttime=now() where ip='$ip' and agent='$agent'");
+  
   //********
   // Now look at all tracker entries to see if this ip has ever been not zero.
   
@@ -223,9 +246,9 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
         // If $robots is empty then we can delete this record
           
         if(!$S->sql("delete from $db.bots where ip='$ip' and agent='$agent2'")) {
-          error_log("checktracker2.php **** Error: Did not delete $ip, $agent2 from bots");
+          error_log("checktracker: Error, Did not delete $ip, $agent2 from bots");
         } else {
-          error_log("checktracker2.php delete from bots because robots is empty: ip=$ip, agent=$agent2, site=$site");
+          if($DEBUG) error_log("checktracker: delete from bots because robots is empty, ip=$ip, agent=$agent2, site=$site");
         }
       } else {
         $sql2 = "select site from $db.bots where ip='$ip' and agent='$agent2' and site='$botsSites'";
@@ -237,9 +260,9 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
         if(empty($botsSite)) $botsSite = $site;
         
         if(!$S->sql("update $db.bots set robots='$robots', site='$botsSite', lasttime=now() where ip='$ip' and agent='$agent2'")) {
-          error_log("checktracker2.php **** Error: Did not update $ip, $botsSite, $agent2 in bots");
+          error_log("checktracker: Error, Did not update $ip, $botsSite, $agent2 in bots");
         } else {
-          error_log("checktracker2.php: update $ip, bots with robots=$robots and site=$site is now $botsSite");
+          if($DEBUG) error_log("checktracker: update $ip, bots with robots=$robots and site=$site is now $botsSite");
         }
       }
 
@@ -253,19 +276,19 @@ while([$id, $ip, $agent, $site, $page, $botAs, $java, $diff] = $S->fetchrow($r, 
       while([$date, $which] = $S->fetchrow('num')) {
         // if which is not BOTS_CRON_ZERO continue.
         
-        if($which != BOTS_CRON_ZERO) continue; // This is robots(1), Sitemap(2) or BOTS(4)
+        if($which != BOTS_CRON_ZERO) continue; // This is robot(1), Sitemap(2) or BOT(4)
 
         if(!$S->sql("delete from $db.bots2 where ip='$ip' and agent='$agent2' and date='$date' and site='$site' and which='$which'")) {
-          error_log("checktracker2.php **** Error: Did not delete $ip, $agent2, $date, $site, $which from bots2");
+          error_log("checktracker: Error, Did not delete $ip, $agent2, $date, $site, $which from bots2");
         } else {
-          error_log("checktracker2.php delete bots2 record for ip=$ip, agent=$agent2, date=$date, site=$site, which=$which");
+          if($DEBUG) error_log("checktracker: delete bots2 record for ip=$ip, agent=$agent2, date=$date, site=$site, which=$which");
         }
       }
       ++$count;
       continue;
-    }
+    } 
     ++$ncnt;
   }
 }
 echo "Done: insert/updates=$ncnt\n";
-error_log("checktracker2.php: Done. Added $newCount to bots&bots2. Update/delete for bots&bots2=$count. tracker isJavaScript not zero=$ncnt");
+if($DEBUG) error_log("checktracker: Done. Added $newCount to bots&bots2. Update/delete for bots&bots2=$count. tracker isJavaScript not zero=$ncnt");

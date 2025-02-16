@@ -38,16 +38,10 @@ mysqldump --defaults-file=/home/barton/mysql-password --user=barton --no-data ma
 mysqldump --defaults-file=/home/barton/mysql-password --user=barton --add-drop-table marathon 2>/dev/null >$dir/$filename;
 gzip $dir/$filename
 
-# No Longer doing allnatural
-#filename="ALLNATURAL.$bkupdate.sql"
-#mysqldump --defaults-file=/home/barton/mysql-password --user=barton --no-data allnatural 2>/dev/null > $dir/allnatural.schema
-#mysqldump --defaults-file=/home/barton/mysql-password --user=barton --add-drop-table  allnatural 2>/dev/null >$dir/$filename
-#gzip $dir/$filename
+filename="BONNIE.$bkupdate.sql"
 
-filename="TYSONWEB.$bkupdate.sql"
-
-mysqldump --defaults-file=/home/barton/mysql-password --user=barton --no-data tysonweb 2>/dev/null > $dir/tysonweb.schema
-mysqldump --defaults-file=/home/barton/mysql-password --user=barton --add-drop-table  tysonweb 2>/dev/null >$dir/$filename
+mysqldump --defaults-file=/home/barton/mysql-password --user=barton --no-data bonnie 2>/dev/null > $dir/bonnie.schema
+mysqldump --defaults-file=/home/barton/mysql-password --user=barton --add-drop-table bonnie 2>/dev/null >$dir/$filename;
 gzip $dir/$filename
 
 filename="MYSQL.$bkupdate.sql"
