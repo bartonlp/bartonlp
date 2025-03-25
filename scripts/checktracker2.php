@@ -43,6 +43,7 @@ CREATE TABLE `tracker` (
   `nogeo` tinyint(1) DEFAULT NULL,
   `browser` varchar(50) DEFAULT NULL,
   `ip` varchar(40) DEFAULT NULL,
+  `count` int DEFAULT 1,
   `agent` text,
   `referer` varchar(255) DEFAULT '',
   `starttime` datetime DEFAULT NULL,
@@ -61,12 +62,15 @@ CREATE TABLE `tracker` (
 
 define("CHECKTRACKER_VERSION", "checktracker-2.9"); // BLP 2025-03-05 - add BOTS_CRON_ZERO to $rob if not in bots table.
 
-$DEBUG = true;
-//$DEBUG_NO_RECORDS = true;
-$DEBUG_NOT_EMPTY = true;
-//$DEBUG_NEW_RECORD_ADDED = true;
-//$DEBUG_TRACKER = true;
-$DEBUG_ZERO = true;
+$DEBUG = true; // Misc errors
+$DEBUG_IP_AGENT_EMPTY = true; // Agent or IP were empty.
+//$DEBUG_NO_RECORDS = true; // The selection for this 15 minutes was empty.
+$DEBUG_NOT_EMPTY = true; // The tracker difftime was not empty.
+//$DEBUG_NEW_RECORD_ADDED = true; // A new record was inserted/updated to bots and bots2
+//$DEBUG_TRACKER = true; // Update tracker record with robots.php and sitemap.php values.
+$DEBUG_ZERO = true; // Tracker record has isjavaScript zero.
+$DEBUG_EXIT = true; // Info at end, counters 
+$DEBUG_DELETE = true; // Deleted item from bots
 
 $_site = require_once "/var/www/vendor/bartonlp/site-class/includes/siteload.php";
 //$_site = require_once "/var/www/site-class/includes/autoload.php";
@@ -163,7 +167,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $diff, $trjava] = $S->fetchrow($r
     $msg = ($x === 0 ? "agent=$agent, " : "agent=empty, ");
     $msg = rtrim($msg, ", ");
     
-    if($DEBUG) error_log("checktracker: id=$id, $msg, line=". __LINE__);
+    if($DEBUG_IP_AGENT_EMPTY) error_log("checktracker: id=$id, $msg, line=". __LINE__);
     continue;
   }
 
@@ -274,7 +278,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $diff, $trjava] = $S->fetchrow($r
           error_log("checktracker Did not delete: id=$id, ip=$ip, site=$site, page=$page, agent=$agent2 from bots, line=". __LINE__);
         } else {
           ++$botsDeletedCount;
-          if($DEBUG) error_log("checktracker delete from bots because robots is empty: id=$id, ip=$ip, site=$site, page=$page, agent=$agent2, line=". __LINE__);
+          if($DEBUG_DELETE) error_log("checktracker delete from bots because robots is empty: id=$id, ip=$ip, site=$site, page=$page, agent=$agent2, line=". __LINE__);
         }
       } else {
         // Remove the the $site we found in tracker from the $botsSites from the bots table.
@@ -328,4 +332,4 @@ EOF;
 }
 
 // BLP 2025-02-20 - $zeroCount was $newCount.
-if($DEBUG) error_log("checktracker: Done. Number of isJavaScript equal zero: $zeroCount.$rest");
+if($DEBUG_EXIT) error_log("checktracker: Done. Number of isJavaScript equal zero: $zeroCount.$rest");

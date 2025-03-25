@@ -8,15 +8,16 @@
 /*
 CREATE TABLE `tracker` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `botAs` varchar(30) DEFAULT NULL,
+  `botAs` varchar(100) DEFAULT NULL,
   `site` varchar(25) DEFAULT NULL,
   `page` varchar(255) NOT NULL DEFAULT '',
   `finger` varchar(50) DEFAULT NULL,
   `nogeo` tinyint(1) DEFAULT NULL,
-  `ip` varchar(40) DEFAULT NULL,
   `browser` varchar(50) DEFAULT NULL,
+  `ip` varchar(40) DEFAULT NULL,
+  `count` int DEFAULT '1',
   `agent` text,
-  `referer` varchar(255) DEVAULT '',
+  `referer` varchar(255) DEFAULT '',
   `starttime` datetime DEFAULT NULL,
   `endtime` datetime DEFAULT NULL,
   `difftime` varchar(20) DEFAULT NULL,
@@ -28,11 +29,14 @@ CREATE TABLE `tracker` (
   KEY `ip` (`ip`),
   KEY `lasttime` (`lasttime`),
   KEY `starttime` (`starttime`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
+) ENGINE=MyISAM AUTO_INCREMENT=7483269 DEFAULT CHARSET=utf8mb3;
 */
 
-$DEBUG = true;
-//$DEBUG_ADD = true;
+//$DEBUG_END_MSG = true; // Message at the end with counts
+$DEBUG_NOT_FOUND = true; // Not found message
+$DEBUG_ALL_READY_FOUND = true; // All ready found message.
+$DEBIG_HAS_DIFFTIME = true; // Has a difftime value.
+$DEBUG_UPDATED = true; // Tracker updated
 
 // This must be an absolute path. Can't use getenv(...) because this is not a web app.
 
@@ -44,15 +48,18 @@ $S = new dbPdo($_site);
 $mask = BEACON_VISIBILITYCHANGE | BEACON_PAGEHIDE | BEACON_UNLOAD | BEACON_BEFOREUNLOAD;
 
 // Select only tracker table items that only have BEACON_VISIBILITYCHANGE and no other indicators.
+// I want to look at a window from 75 minites ago and 60 ago.
 
 $sql = "select id, ip, site, page, botAs, isJavaScript, starttime, endtime, difftime from $S->masterdb.tracker ".
-       "where lasttime>= now() - interval 1 hour " .
+       "where starttime>= now() - interval 75 minute  ".
+       "and starttime< now() - interval 60 minute ".
        "and isJavaScript & $mask = ". BEACON_VISIBILITYCHANGE .
        " and ip!='". MY_IP . "' order by lasttime";
 
 if(!$S->sql($sql)) {
   echo "nothing found\n";
-  if($DEBUG) error_log("checkvischange: No items found");
+
+  if($DEBUG_NOT_FOUND) error_log("checkvischange: No items found");
   exit();
 }
 
@@ -61,10 +68,21 @@ if(!$S->sql($sql)) {
 $changeCount = 0;
 
 while([$id, $ip, $site, $page, $botAs, $java, $starttime, $endtime, $difftime] = $S->fetchrow('num')) {
+  $hexjava = dechex($java);
+
   if(str_contains($botAs, 'vischange-exit')) {
-    if($DEBUG) {
-      echo "\$botAs already has 'vischange-exit', id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs\n";
-      error_log("checkvischange \$botAs already has 'vischange-exit': id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, line=". __LINE__);
+    echo "\$botAs already has 'vischange-exit', id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs\n";
+
+    if($DEBUG_ALL_READY_FOUND) {
+      error_log("checkvischange \$botAs already has 'vischange-exit': id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, java=$hexjava, line=". __LINE__);
+    }
+    continue;
+  }
+
+  if($difftime) {
+    echo "Has difftime, id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, difftime=$difftime\n";
+    if($DEBUG_HAS_DIFFTIME) {
+      error_log("checkvischange Has difftime: id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, difftime=$difftime, line=". __LINE__);
     }
     continue;
   }
@@ -72,19 +90,20 @@ while([$id, $ip, $site, $page, $botAs, $java, $starttime, $endtime, $difftime] =
   $botAs .= ",vischange-exit";
   $botAs = ltrim($botAs, ','); // if this is the only thing in $botAs.
   $java |= TRACKER_ADDED; // BLP 2025-03-08 - Added to defines.php 
-  
+  $hexjava = dechex($java);
+
   // Prepair the update string.
   
-  $sqlupdate = "update $S->masterdb.tracker set botAs = '$botAs', isJavaScript = $java where id=$id";
+  $sqlupdate = "update $S->masterdb.tracker set botAs = '$botAs', isJavaScript=$java where id=$id";
   
   // We add this to the PHP_ERRORS.log file also.
   // We need a $formated date that looks like the way error_log() adds the date.
   
-  $date = new DateTime('2025-03-07 12:30:30', new DateTimeZone('America/New_York'));
+  $date = new DateTime("now", new DateTimeZone('America/New_York'));
   $formatted = "[" . $date->format('d-M-Y H:i:s') . " " . $date->getTimezone()->getName() . "]";
 
   if(file_put_contents("/var/www/PHP_ERRORS.log",
-                       "$formatted checkvischange ADDED: id=$id, ip=$ip, site=$site, page=$page, java=". dechex($java) . ", sql=$sqlupdate, line=". __LINE__ . "\n",
+                       "$formatted checkvischange ADDED: id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, java=$hexjava, line=". __LINE__ . "\n",
                        FILE_APPEND) === false) {
     // If we fail to add to PHP_ERRORS.log explain what happened.
     
@@ -93,21 +112,17 @@ while([$id, $ip, $site, $page, $botAs, $java, $starttime, $endtime, $difftime] =
     exit();
   }
 
-  if($DEBUG_ADD) {
-    error_log("checkvischange ADDED: id=$id, ip=$ip, site=$site, page=$page, java=". dechex($java) . ", sql=$sqlupdate, line=". __LINE__);
-  }
-
   // Actually do the query.
   
   $S->sql($sqlupdate); // do the update of tracker.
 
-  if($DEBUG) {
+  if($DEBUG_UPDATED) {
     echo "sql=$sqlupdate\n";
-    error_log("checkvischange UPDATED: id=$id, ip=$ip, site=$site, page=$page, java=". dechex($java) . ", line=". __LINE__);
+    error_log("checkvischange UPDATED: id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, java=$hexjava, line=". __LINE__);
   }
 
   $changeCount++;
 }
 
 echo "Done. Change count=$changeCount\n";
-if($DEBUG) error_log("checkvischange: Done. Change count=$changeCount");
+if($DEBUG_END_MSG) error_log("checkvischange: Done. Change count=$changeCount");
