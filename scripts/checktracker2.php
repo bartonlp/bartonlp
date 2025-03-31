@@ -60,7 +60,7 @@ CREATE TABLE `tracker` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8mb3;
 */
 
-define("CHECKTRACKER_VERSION", "checktracker-2.9"); // BLP 2025-03-05 - add BOTS_CRON_ZERO to $rob if not in bots table.
+define("CHECKTRACKER_VERSION", "checktracker-2.10"); // Fixed tracker updates to use count and lasttime.
 
 $DEBUG = true; // Misc errors
 $DEBUG_IP_AGENT_EMPTY = true; // Agent or IP were empty.
@@ -229,7 +229,7 @@ while([$id, $ip, $agent, $site, $page, $botAs, $diff, $trjava] = $S->fetchrow($r
   if($DEBUG_TRACKER)
     error_log("checktracker update tracker: id=$id, ip=$ip, site=$site, page=$page, botAs=$botAs, java=". dechex($trjava). ", agent=$agent, line=". __LINE__);
   
-  $S->sql("update $db.tracker set botAs='$botAs', isJavaScript='$trjava' where ip='$ip' and agent='$agent'");
+  $S->sql("update $db.tracker set botAs='$botAs', isJavaScript='$trjava', lasttime=now(), count=count+1 where ip='$ip' and agent='$agent'");
 
   //********
   // Now look at all tracker entries to see if this ip has ever been not zero.

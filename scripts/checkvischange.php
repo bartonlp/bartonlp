@@ -35,7 +35,7 @@ CREATE TABLE `tracker` (
 //$DEBUG_END_MSG = true; // Message at the end with counts
 $DEBUG_NOT_FOUND = true; // Not found message
 $DEBUG_ALL_READY_FOUND = true; // All ready found message.
-$DEBIG_HAS_DIFFTIME = true; // Has a difftime value.
+$DEBUG_HAS_DIFFTIME = true; // Has a difftime value.
 $DEBUG_UPDATED = true; // Tracker updated
 
 // This must be an absolute path. Can't use getenv(...) because this is not a web app.
@@ -51,7 +51,7 @@ $mask = BEACON_VISIBILITYCHANGE | BEACON_PAGEHIDE | BEACON_UNLOAD | BEACON_BEFOR
 // I want to look at a window from 75 minites ago and 60 ago.
 
 $sql = "select id, ip, site, page, botAs, isJavaScript, starttime, endtime, difftime from $S->masterdb.tracker ".
-       "where starttime>= now() - interval 75 minute  ".
+       "where starttime>= now() - interval 120 minute  ".
        "and starttime< now() - interval 60 minute ".
        "and isJavaScript & $mask = ". BEACON_VISIBILITYCHANGE .
        " and ip!='". MY_IP . "' order by lasttime";
